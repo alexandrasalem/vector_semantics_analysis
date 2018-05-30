@@ -1,0 +1,77 @@
+---
+title: "Poster Graphs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Load packages
+```{r load packages}
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(readr) # for import
+library(forcats) # for factors
+library(Hmisc)
+```
+
+##Read csv
+```{r read csv}
+test_sim <- read_csv('/Users/salem/Documents/ERPA_similarity_gs1.csv', # safer, StringsAsFactors = FALSE by default
+                     col_types = cols(
+                       dx = col_factor(levels = NULL)))
+                     
+
+glimpse(test_sim)
+```
+
+##Big plot
+```{r big plot}
+
+test_sim_plot <- test_sim %>% 
+  filter(gs_dx == "TD", dx == c("ASD", "TD"))
+
+ggplot(test_sim_plot, aes(x = gs, y = sim)) +
+  stat_summary(aes(color = dx), test_sim_plot, fun.data = "mean_cl_boot", geom="pointrange", size = .25) +
+  scale_colour_manual(name = 'Diagnoses',values=c(alpha("blue", .4), alpha("red", .4))) +
+  labs(x = "Gold Standard Choice") +
+  labs(y = "Cosine Similarity \n to Gold Standards") +
+    labs(caption = "Figure 2") +
+  ggtitle("Semantic Similarity Between Diagnostic Groups \n across TD Gold Standards", subtitle = "95% Confidence Intervals") +
+  theme_bw()+
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        plot.title=element_text(hjust=.5, family = "serif", size = 16),
+        plot.subtitle = element_text(hjust=.5, family = "serif", size = 12),
+        plot.caption = element_text(face = "bold"),
+        text = element_text(family = "serif", size = 12))
+
+ggsave("salem_figure_1.pdf", last_plot())
+```
+
+```{r}
+test_sim$dx <- factor(test_sim$dx, levels = c("ASD", "TD", "SLI"))
+
+test_sim_plot <- test_sim %>% 
+  filter(gs_dx == "TD", dx == c("ASD", "TD"))
+
+ggplot(filter(test_sim_plot, gs==c("OGI-186", "OGI-005")), aes(x=dx, y=sim)) +
+  stat_summary(fun.data = "mean_cl_boot", geom="pointrange") +
+  facet_wrap(~gs, labeller = as_labeller(c("OGI-186"="Gold Standard 2", "OGI-005"="Gold Standard 1"))) +
+  labs(x = "Diagnostic Group") +
+  labs(y = "Semantic Similarity \n to Gold Standards") +
+  labs(caption = "Figure 3") +
+  ggtitle("Semantic Similarity Between Diagnostic Groups \n for Two Different Gold Standards", subtitle = "95% Confidence Intervals") +
+  theme_bw()+
+  theme(axis.title = element_text(size = 12),
+        plot.title=element_text(hjust=.5, family = "serif", size = 16),
+        plot.subtitle = element_text(hjust=.5, family = "serif", size = 12),
+        plot.caption = element_text(face = "bold"),
+        text = element_text(family = "serif", size = 12))
+
+ggsave("salem_figure_2.pdf", last_plot())
+```
+
